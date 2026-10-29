@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Query big data with Trino</title>
+    <script>
+      // Retitle the audience tab so the two tabs are distinguishable in the
+      // browser tab strip and in Meet's "Share a tab" picker.
+      if (new URLSearchParams(location.search).get("mode") === "audience") {
+        document.title = "Query big data with Trino — Audience";
+      }
+    </script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; background: #0a0a0a; overflow: hidden; }
+      hyperframes-slideshow { display: block; position: relative; width: 100vw; height: 100vh; }
+      hyperframes-player { position: absolute; inset: 0; }
+    </style>
+    <script src="player.js"></script>
+    <script src="slideshow.js"></script>
+  </head>
+  <body>
+    <hyperframes-slideshow tabindex="0" sound>
+      <hyperframes-player interactive src="composition/index.html"></hyperframes-player>
+      <script type="application/hyperframes-slideshow+json">
+{
+  "slides": [
+    {
+      "sceneId": "s01-title"
+    },
+    {
+      "sceneId": "s02-scatter"
+    },
+    {
+      "sceneId": "s03-question",
+      "fragments": [
+        21,
+        27
+      ]
+    },
+    {
+      "sceneId": "s04-before",
+      "fragments": [
+        31,
+        37
+      ]
+    },
+    {
+      "sceneId": "s05-waste",
+      "fragments": [
+        41,
+        47
+      ]
+    },
+    {
+      "sceneId": "s06-federated",
+      "fragments": [
+        51,
+        55,
+        59
+      ]
+    },
+    {
+      "sceneId": "s07-outside",
+      "fragments": [
+        61,
+        67
+      ]
+    },
+    {
+      "sceneId": "s08-architecture",
+      "fragments": [
+        71,
+        75,
+        79
+      ]
+    },
+    {
+      "sceneId": "s09-spark"
+    },
+    {
+      "sceneId": "s10-connectors",
+      "fragments": [
+        91,
+        97
+      ]
+    },
+    {
+      "sceneId": "s11-limits",
+      "fragments": [
+        101,
+        104,
+        107,
+        109
+      ]
+    },
+    {
+      "sceneId": "s12-demo"
+    },
+    {
+      "sceneId": "s13-roadmap",
+      "hotspots": [
+        {
+          "id": "h-backup",
+          "label": "Beklenen sonuçlar",
+          "target": "sonuclar",
+          "region": {
+            "x": 78,
+            "y": 84,
+            "w": 18,
+            "h": 8
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "s14-close"
+    }
+  ],
+  "slideSequences": [
+    {
+      "id": "sonuclar",
+      "label": "Beklenen demo sonuçları",
+      "slides": [
+        {
+          "sceneId": "b1-score"
+        },
+        {
+          "sceneId": "b2-denied"
+        },
+        {
+          "sceneId": "b3-states"
+        }
+      ]
+    }
+  ]
+}
+</script>
+    </hyperframes-slideshow>
+    <!-- Present CTA lives in the component's nav cluster (data-hf-present, plus
+         the P key) — no page-level button, or we'd render two Present CTAs. -->
+    <script>
+      // Sound effects play HERE, in the parent document. The composition runs in the
+      // player's iframe, which is autoplay-blocked without its own user gesture; the
+      // slideshow posts { type: "hf-sfx", name } to the parent on nav, and we play the
+      // matching clip from the deck's sfx/ folder (served under /composition/sfx/).
+      // Runs in both presenter and audience windows. Missing clips fail silently.
+      (function () {
+        var clips = {
+          advance: new Audio("composition/sfx/advance.mp3"),
+          fragment: new Audio("composition/sfx/fragment.mp3"),
+          "branch-enter": new Audio("composition/sfx/branch-enter.mp3"),
+          back: new Audio("composition/sfx/back.mp3"),
+        };
+        clips.advance.volume = 0.45;
+        clips.fragment.volume = 0.4;
+        clips["branch-enter"].volume = 0.4;
+        clips.back.volume = 0.4;
+        for (var k in clips) clips[k].preload = "auto";
+
+        // Mute state is owned by <hyperframes-slideshow sound>; mirror it.
+        var muted = false;
+        function setClipsMuted(nextMuted) {
+          Object.keys(clips).forEach(function (name) {
+            clips[name].muted = nextMuted;
+          });
+        }
+        var ss = document.querySelector("hyperframes-slideshow");
+        if (ss) {
+          ss.addEventListener("hf-sound", function (e) {
+            muted = e.detail && e.detail.muted === true;
+            setClipsMuted(muted);
+          });
+        }
+
+        // Autoplay needs a user gesture — prime each clip (play muted, reset) on the
+        // first interaction so later plays are instant and allowed.
+        var unlocked = false;
+        function unlock() {
+          if (unlocked) return;
+          unlocked = true;
+          Object.keys(clips).forEach(function (name) {
+            var el = clips[name];
+            var v = el.volume;
+            el.volume = 0;
+            el.play()
+              .then(function () {
+                el.pause();
+                el.currentTime = 0;
+                el.volume = v;
+              })
+              .catch(function () {
+                el.volume = v;
+              });
+          });
+        }
+        window.addEventListener("keydown", unlock, true);
+        window.addEventListener("pointerdown", unlock, true);
+        window.addEventListener("click", unlock, true);
+
+        window.addEventListener("message", function (e) {
+          // Only accept cues from this origin (the composition iframe is same-origin).
+          if (e.origin !== location.origin) return;
+          var d = e.data;
+          if (!d || d.type !== "hf-sfx" || muted) return;
+          // Own-property guard: a malicious name like "__proto__" must not resolve to
+          // a prototype object (which would be truthy and then get mutated below).
+          if (!Object.prototype.hasOwnProperty.call(clips, d.name)) return;
+          var el = clips[d.name];
+          if (!el || !unlocked) return;
+          try {
+            el.currentTime = 0;
+            el.play().catch(function () {});
+          } catch (err) {
+            /* ignore */
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

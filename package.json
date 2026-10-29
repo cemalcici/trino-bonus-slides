@@ -1,0 +1,9 @@
+{
+  "name": "trino-bonus-slides",
+  "private": true,
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.178 present ./composition",
+    "studio": "npx --yes hyperframes@0.8.178 preview ./composition --background",
+    "check": "cd composition && npx --yes hyperframes@0.8.178 check"
+  }
+}

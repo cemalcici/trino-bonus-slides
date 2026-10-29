@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Query big data with Trino</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face{font-family:'Barlow Condensed';font-weight:600;font-style:normal;font-display:block;src:url('assets/fonts/BarlowCondensed-600-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Barlow Condensed';font-weight:600;font-style:normal;font-display:block;src:url('assets/fonts/BarlowCondensed-600-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Barlow Condensed';font-weight:800;font-style:normal;font-display:block;src:url('assets/fonts/BarlowCondensed-800-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Barlow Condensed';font-weight:800;font-style:normal;font-display:block;src:url('assets/fonts/BarlowCondensed-800-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'JetBrains Mono';font-weight:500;font-style:normal;font-display:block;src:url('assets/fonts/JetBrainsMono-500-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'JetBrains Mono';font-weight:500;font-style:normal;font-display:block;src:url('assets/fonts/JetBrainsMono-500-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'JetBrains Mono';font-weight:700;font-style:normal;font-display:block;src:url('assets/fonts/JetBrainsMono-700-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'JetBrains Mono';font-weight:700;font-style:normal;font-display:block;src:url('assets/fonts/JetBrainsMono-700-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Public Sans';font-weight:500;font-style:normal;font-display:block;src:url('assets/fonts/PublicSans-500-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Public Sans';font-weight:500;font-style:normal;font-display:block;src:url('assets/fonts/PublicSans-500-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Public Sans';font-weight:700;font-style:normal;font-display:block;src:url('assets/fonts/PublicSans-700-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family:'Public Sans';font-weight:700;font-style:normal;font-display:block;src:url('assets/fonts/PublicSans-700-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+
+      :root {
+        --ground: #1c2127;
+        --plate: #262d36;
+        --bone: #e9eef2;
+        --muted: #b9c2cc;
+        --steel: #8c96a3;
+        --orange: #ff6a13;
+        --teal: #3fb6a8;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+      ::selection { background: var(--teal); color: var(--ground); }
+      .scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); color: var(--bone); font-family: 'Public Sans', sans-serif; }
+      .clip { position: absolute; inset: 0; }
+      .head { position: absolute; left: 96px; top: 96px; width: 1560px; }
+      h1, h2 { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 0.005em; line-height: 1.1; text-wrap: balance; }
+      h1 { font-size: 132px; }
+      h2 { font-size: 84px; }
+      .sub { margin-top: 26px; font-size: 44px; line-height: 1.25; font-weight: 500; color: var(--muted); max-width: 1500px; }
+      .foot { position: absolute; left: 96px; right: 96px; bottom: 44px; display: grid; grid-template-columns: 1fr auto 1fr; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 26px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--steel); }
+      .foot span:nth-child(2) { text-align: center; }
+      .foot span:nth-child(3) { text-align: right; }
+      /* cumulative step rail: stations passed, the current one, the ones ahead */
+      .rail { position: absolute; right: 96px; top: 52px; display: flex; align-items: center; gap: 12px; }
+      .rail i { display: block; width: 20px; height: 20px; border-radius: 10px; border: 4px solid #4b545e; }
+      .rail b { margin-left: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: var(--bone); font-variant-numeric: tabular-nums; }
+      .rail i.done { background: var(--steel); border-color: var(--steel); }
+      .rail i.now { width: 34px; height: 34px; border-radius: 17px; border-color: var(--teal); background: var(--teal); }
+      .viz { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      /* tube network vocabulary: state is line form, not hue */
+      .casing { fill: none; stroke: var(--steel); stroke-width: 34; stroke-linecap: round; stroke-linejoin: round; }
+      .casing.idle { stroke-dasharray: 2 46; stroke-width: 30; }
+      .bore { fill: none; stroke: var(--ground); stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+      .strike { stroke: var(--orange); stroke-width: 14; stroke-linecap: round; }
+      .plate { fill: var(--teal); }
+      .ghost { fill: var(--plate); }
+      .hub { fill: var(--plate); stroke: var(--steel); stroke-width: 6; }
+      .pl { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 44px; fill: var(--ground); text-anchor: middle; }
+      .pl.light { fill: var(--bone); }
+      .cap { font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 40px; fill: var(--muted); }
+      .cap.strong { fill: var(--bone); font-weight: 700; }
+      .cap.alarm { fill: var(--orange); font-weight: 700; }
+      .mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 40px; fill: var(--bone); font-variant-numeric: tabular-nums; }
+      .mono.alarm { fill: var(--orange); font-weight: 700; }
+      .num { font-family: 'JetBrains Mono', monospace; font-weight: 700; fill: var(--bone); font-variant-numeric: tabular-nums; }
+      .q { fill: var(--orange); }
+      .a { fill: var(--bone); }
+      .wall { stroke: var(--bone); stroke-width: 6; }
+      .light-plate { fill: #ffffff; }
+      .avatar { position: absolute; left: 170px; top: 360px; width: 280px; height: 280px; border-radius: 140px; object-fit: cover; }
+      .qr { position: absolute; top: 330px; width: 340px; height: 340px; }
+      /* ambient motion: self-driving loops that keep a held slide alive */
+      .amb { opacity: 0; animation-duration: 4s; animation-iteration-count: infinite; animation-timing-function: linear; }
+      @media (prefers-reduced-motion: reduce) { .amb { animation: none !important; } }
+      .amb-t1 { animation-name: amb-t1; }
+      .amb-t2 { animation-name: amb-t2; }
+      .amb-spark { animation-name: amb-spark; animation-duration: 2.4s; }
+      .amb-trino-q { animation-name: amb-trino-q; animation-duration: 2.4s; }
+      .amb-trino-a { animation-name: amb-trino-a; animation-duration: 2.4s; animation-delay: 1.2s; }
+      .amb-demo { animation-name: amb-demo; animation-duration: 3s; }
+      .amb-route { animation-name: amb-route; animation-duration: 10s; }
+      .amb-thanks { animation-name: amb-thanks; animation-duration: 3s; }
+      .amb-thanks2 { animation-name: amb-thanks2; animation-duration: 3s; animation-delay: 1.5s; }
+      @keyframes amb-t1 { 0% { transform: translate(0px, 0px); opacity: 0; } 10% { opacity: 1; } 45% { transform: translate(132px, 0px); } 85% { transform: translate(132px, 170px); opacity: 1; } 100% { transform: translate(132px, 170px); opacity: 0; } }
+      @keyframes amb-t2 { 0% { transform: translate(0px, 0px); opacity: 0; } 10% { opacity: 1; } 40% { transform: translate(60px, 0px); } 85% { transform: translate(60px, -160px); opacity: 1; } 100% { transform: translate(60px, -160px); opacity: 0; } }
+      @keyframes amb-spark { 0% { transform: translate(0px, 0px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(540px, 0px); opacity: 0; } }
+      @keyframes amb-trino-q { 0% { transform: translate(0px, 0px); opacity: 0; } 15% { opacity: 1; } 45% { opacity: 1; } 50% { transform: translate(540px, 0px); opacity: 0; } 100% { transform: translate(540px, 0px); opacity: 0; } }
+      @keyframes amb-trino-a { 0% { transform: translate(0px, 0px); opacity: 0; } 15% { opacity: 1; } 45% { opacity: 1; } 50% { transform: translate(-540px, 0px); opacity: 0; } 100% { transform: translate(-540px, 0px); opacity: 0; } }
+      @keyframes amb-demo { 0% { transform: translate(0px, 0px); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(220px, 0px); opacity: 0; } }
+      @keyframes amb-route { 0%, 8% { transform: translate(0px, 0px); opacity: 0; } 12% { opacity: 1; } 18%, 26% { transform: translate(370px, 0px); } 34%, 42% { transform: translate(740px, 0px); } 50%, 66% { transform: translate(1110px, 0px); } 74%, 92% { transform: translate(1480px, 0px); opacity: 1; } 100% { transform: translate(1480px, 0px); opacity: 0; } }
+      @keyframes amb-thanks { 0% { transform: translate(0px, 0px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(300px, 0px); opacity: 0; } }
+      @keyframes amb-thanks2 { 0% { transform: translate(0px, 0px); opacity: 0; } 20% { opacity: 1; } 60% { opacity: 1; } 80%, 100% { transform: translate(0px, 0px); opacity: 0; } }
+    </style>
+  </head>
+  <body>
+    <script type="application/hyperframes-slideshow+json">
+{
+  "slides": [
+    {
+      "sceneId": "s01-title"
+    },
+    {
+      "sceneId": "s02-scatter"
+    },
+    {
+      "sceneId": "s03-question",
+      "fragments": [
+        21,
+        27
+      ]
+    },
+    {
+      "sceneId": "s04-before",
+      "fragments": [
+        31,
+        37
+      ]
+    },
+    {
+      "sceneId": "s05-waste",
+      "fragments": [
+        41,
+        47
+      ]
+    },
+    {
+      "sceneId": "s06-federated",
+      "fragments": [
+        51,
+        55,
+        59
+      ]
+    },
+    {
+      "sceneId": "s07-outside",
+      "fragments": [
+        61,
+        67
+      ]
+    },
+    {
+      "sceneId": "s08-architecture",
+      "fragments": [
+        71,
+        75,
+        79
+      ]
+    },
+    {
+      "sceneId": "s09-spark"
+    },
+    {
+      "sceneId": "s10-connectors",
+      "fragments": [
+        91,
+        97
+      ]
+    },
+    {
+      "sceneId": "s11-limits",
+      "fragments": [
+        101,
+        104,
+        107,
+        109
+      ]
+    },
+    {
+      "sceneId": "s12-demo"
+    },
+    {
+      "sceneId": "s13-roadmap",
+      "hotspots": [
+        {
+          "id": "h-backup",
+          "label": "Beklenen sonuçlar",
+          "target": "sonuclar",
+          "region": {
+            "x": 78,
+            "y": 84,
+            "w": 18,
+            "h": 8
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "s14-close"
+    }
+  ],
+  "slideSequences": [
+    {
+      "id": "sonuclar",
+      "label": "Beklenen demo sonuçları",
+      "slides": [
+        {
+          "sceneId": "b1-score"
+        },
+        {
+          "sceneId": "b2-denied"
+        },
+        {
+          "sceneId": "b3-states"
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+    <div id="root" data-composition-id="root" data-start="0" data-duration="170" data-width="1920" data-height="1080" style="position: relative; width: 100%; height: 100%; overflow: hidden">
+
+    <!-- 01 · Başlık -->
+    <div class="scene" id="s01-title" data-composition-id="s01-title" data-start="0" data-duration="10" data-label="Başlık" data-width="1920" data-height="1080">
+      <section id="s01-title-body" class="clip" data-start="0" data-duration="10" data-track-index="1">
+        <div class="head" style="width: 820px; top: 150px">
+          <h1 lang="en">Query big data with Trino</h1>
+          <p class="sub" style="margin-top: 48px"><span style="display: block">Soru veriye gider.</span><span style="display: block">Veri yerinde kalır.</span><span style="display: block">Sadece cevap döner.</span></p>
+        </div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g transform="translate(900 110)">
+            <path class="casing" d="M450 380 V110 H690" /><path class="bore" d="M450 380 V110 H690" />
+            <path class="casing" d="M450 380 H150 V210" /><path class="bore" d="M450 380 H150 V210" />
+            <path class="casing" d="M450 380 H760 V600" /><path class="bore" d="M450 380 H760 V600" />
+            <path class="casing" d="M450 380 V660 H370" /><path class="bore" d="M450 380 V660 H370" />
+            <rect class="plate" x="690" y="60" width="260" height="100" rx="12" /><text class="pl" x="820" y="126">POSTGRES</text>
+            <rect class="plate" x="20" y="110" width="260" height="100" rx="12" /><text class="pl" x="150" y="176">MONGODB</text>
+            <rect class="plate" x="610" y="600" width="300" height="100" rx="12" /><text class="pl" x="760" y="666">PARTNER S3</text>
+            <rect class="plate" x="70" y="610" width="300" height="100" rx="12" /><text class="pl" x="220" y="676">LAKE S3</text>
+            <rect class="hub" x="320" y="300" width="260" height="160" rx="20" /><text class="pl light" x="450" y="378" style="font-size: 52px">TRINO</text>
+            <text class="pl light" x="450" y="430" style="font-size: 40px; font-weight: 600">COORDINATOR</text>
+            <g id="s01-q"><rect class="q" x="412" y="210" width="76" height="40" rx="20" /></g>
+            <g id="s01-a"><rect class="a" x="260" y="366" width="40" height="28" rx="14" /></g>
+            <g class="amb amb-t1"><rect class="q" x="590" y="360" width="76" height="40" rx="20" /></g>
+            <g class="amb amb-t2" style="animation-delay: 2s"><rect class="a" x="370" y="646" width="40" height="28" rx="14" /></g>
+          </g>
+          <g>
+            <rect class="q" x="152" y="842" width="76" height="40" rx="20" /><text class="cap strong" x="252" y="876">soru</text>
+            <rect class="a" x="420" y="848" width="40" height="28" rx="14" /><text class="cap strong" x="484" y="876">cevap</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Açılış</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 1 / 14"><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>01 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 02 · Dağınık veri -->
+    <div class="scene" id="s02-scatter" data-composition-id="s02-scatter" data-start="10" data-duration="10" data-label="Dağınık veri" data-width="1920" data-height="1080">
+      <section id="s02-scatter-body" class="clip" data-start="10" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Veri hiçbir zaman tek bir yerde durmuyor.</h2><p class="sub">Her sistem kendi formatında, kendi sahibinde.</p></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <line class="wall" x1="1390" y1="390" x2="1390" y2="900" />
+          <text class="cap" x="1420" y="430">şirket sınırı</text>
+          <rect class="plate" x="120" y="470" width="320" height="120" rx="14" /><text class="pl" x="280" y="550">POSTGRES</text>
+          <text class="cap strong" x="120" y="660">ilişkisel</text><text class="cap" x="120" y="715">sipariş sistemi</text>
+          <rect class="plate" x="540" y="560" width="320" height="120" rx="14" /><text class="pl" x="700" y="640">MONGODB</text>
+          <text class="cap strong" x="540" y="750">doküman</text><text class="cap" x="540" y="805">destek servisi</text>
+          <rect class="plate" x="960" y="440" width="320" height="120" rx="14" /><text class="pl" x="1120" y="520">LAKE S3</text>
+          <text class="cap strong" x="960" y="630">object storage</text><text class="cap" x="960" y="685">bizim lake</text>
+          <rect class="plate" x="1470" y="560" width="340" height="120" rx="14" /><text class="pl" x="1640" y="640">PARTNER S3</text>
+          <text class="cap strong" x="1470" y="750">kargo partneri</text><text class="cap" x="1470" y="805">sadece okuma</text>
+          <text class="cap" x="120" y="960">Kurgusal senaryo · veri: Olist (Kaggle)</text>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Problem</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 2 / 14"><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>02 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 03 · Soru -->
+    <div class="scene" id="s03-question" data-composition-id="s03-question" data-start="20" data-duration="10" data-label="İş sorusu" data-width="1920" data-height="1080">
+      <section id="s03-question-body" class="clip" data-start="20" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Tek bir iş sorusu, üç ayrı sisteme dokunuyor.</h2><p class="sub">“Geciken teslimatlar müşteri memnuniyetini düşürüyor mu?”</p></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g id="s03-tubes" opacity="0">
+            <path class="casing" d="M360 650 V780 M960 650 V780 M1560 650 V780" /><path class="bore" d="M360 650 V780 M960 650 V780 M1560 650 V780" />
+            <rect class="plate" x="200" y="780" width="320" height="110" rx="14" /><text class="pl" x="360" y="855">PARTNER S3</text>
+            <rect class="plate" x="800" y="780" width="320" height="110" rx="14" /><text class="pl" x="960" y="855">POSTGRES</text>
+            <rect class="plate" x="1400" y="780" width="320" height="110" rx="14" /><text class="pl" x="1560" y="855">MONGODB</text>
+          </g>
+          <g id="s03-whole">
+            <rect class="q" x="260" y="420" width="1400" height="120" rx="60" />
+            <text class="pl" x="960" y="498" style="font-size: 52px">TESLİM TARİHİ · SÖZ VERİLEN TARİH · YORUM PUANI</text>
+          </g>
+          <g id="s03-parts" opacity="0">
+            <g id="s03-p1"><rect class="q" x="140" y="420" width="440" height="120" rx="60" /><text class="pl" x="360" y="498" style="font-size: 52px">TESLİM TARİHİ</text></g>
+            <g id="s03-p2"><rect class="q" x="740" y="420" width="440" height="120" rx="60" /><text class="pl" x="960" y="498" style="font-size: 52px">SÖZ VERİLEN TARİH</text></g>
+            <g id="s03-p3"><rect class="q" x="1340" y="420" width="440" height="120" rx="60" /><text class="pl" x="1560" y="498" style="font-size: 52px">YORUM PUANI</text></g>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Problem</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 3 / 14"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>03 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 04 · Trino öncesi -->
+    <div class="scene" id="s04-before" data-composition-id="s04-before" data-start="30" data-duration="10" data-label="Trino öncesi" data-width="1920" data-height="1080">
+      <section id="s04-before-body" class="clip" data-start="30" data-duration="10" data-track-index="1">
+        <div class="head"><h2><span lang="en">Trino</span> öncesi refleks: önce her şeyi taşı, sonra sor.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <path class="casing" d="M420 380 H1000 V450 H1240" /><path class="bore" d="M420 380 H1000 V450 H1240" />
+          <path class="casing" d="M420 560 H1240" /><path class="bore" d="M420 560 H1240" />
+          <path class="casing" d="M420 740 H1000 V670 H1240" /><path class="bore" d="M420 740 H1000 V670 H1240" />
+          <rect class="plate" x="110" y="325" width="310" height="110" rx="14" /><text class="pl" x="265" y="400">POSTGRES</text>
+          <rect class="plate" x="110" y="505" width="310" height="110" rx="14" /><text class="pl" x="265" y="580">MONGODB</text>
+          <rect class="plate" x="110" y="685" width="310" height="110" rx="14" /><text class="pl" x="265" y="760">PARTNER S3</text>
+          <rect class="plate" x="1240" y="330" width="420" height="460" rx="24" />
+          <text class="pl" x="1450" y="404">LAKE S3</text>
+          <g fill="#8c96a3">
+            <rect x="1290" y="440" width="150" height="80" rx="8" /><rect x="1460" y="440" width="150" height="80" rx="8" />
+            <rect x="1290" y="540" width="150" height="80" rx="8" /><rect x="1460" y="540" width="150" height="80" rx="8" />
+            <rect x="1290" y="640" width="150" height="80" rx="8" /><rect x="1460" y="640" width="150" height="80" rx="8" />
+          </g>
+          <g fill="#8c96a3">
+            <rect id="s04-c1" x="440" y="355" width="90" height="50" rx="6" />
+            <rect id="s04-c2" x="440" y="535" width="90" height="50" rx="6" />
+            <rect id="s04-c3" x="440" y="715" width="90" height="50" rx="6" />
+          </g>
+          <g id="s04-steps" opacity="0">
+            <rect x="110" y="880" width="1550" height="8" fill="#8c96a3" />
+            <g class="cap strong"><text x="110" y="960">pipeline yaz</text><text x="520" y="960">çalıştır</text><text x="840" y="960">şemaları eşle</text></g>
+            <text class="cap alarm" x="1660" y="960" text-anchor="end">en son: soru</text>
+            <rect id="s04-ask" class="q" x="110" y="864" width="76" height="40" rx="20" />
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Problem</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 4 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>04 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 05 · İsraf -->
+    <div class="scene" id="s05-waste" data-composition-id="s05-waste" data-start="40" data-duration="10" data-label="Taşınan ne kadarı kullanıldı" data-width="1920" data-height="1080">
+      <section id="s05-waste-body" class="clip" data-start="40" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Partner verisinin sadece %4,5'i işimize yaradı.</h2><p class="sub">Demo ölçümü: partnerin verdiği ve gerçekten gereken.</p></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <text class="cap strong" x="110" y="470">partnerin verdiği</text>
+          <rect x="110" y="500" width="1700" height="110" rx="10" fill="#8c96a3" />
+          <text class="num" x="1780" y="576" text-anchor="end" style="font-size: 56px; fill: var(--ground)">52,8 MB</text>
+          <text class="cap strong" x="110" y="720" style="fill: var(--teal)">bize gereken</text>
+          <rect id="s05-need" x="110" y="750" width="77" height="110" rx="10" class="plate" />
+          <text class="num" x="220" y="826" style="font-size: 56px; fill: var(--teal)">2,4 MB</text>
+          <g id="s05-facts" opacity="0" class="mono">
+            <text x="700" y="740">26 dosya → 1 dosya</text>
+            <text x="700" y="800">485.924 event → 96.475 satır</text>
+            <text x="700" y="860">13 kolon → 3 kolon</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Problem</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 5 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>05 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 06 · Federated query -->
+    <div class="scene" id="s06-federated" data-composition-id="s06-federated" data-start="50" data-duration="10" data-label="Federated query" data-width="1920" data-height="1080">
+      <section id="s06-federated-body" class="clip" data-start="50" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Federated query: soru veriye gider, veri yerinde kalır.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g transform="translate(466 250)">
+            <path class="casing" d="M500 380 V110 H690" /><path class="bore" d="M500 380 V110 H690" />
+            <path class="casing" d="M400 380 V200 H250" /><path class="bore" d="M400 380 V200 H250" />
+            <path class="casing" d="M450 380 H760 V600" /><path class="bore" d="M450 380 H760 V600" />
+            <path class="casing idle" d="M450 380 V660 H370" />
+            <path class="casing" d="M450 380 H-170" /><path class="bore" d="M450 380 H-170" />
+            <rect class="ghost" x="-370" y="330" width="200" height="100" rx="12" /><text class="pl light" x="-270" y="396">SQL</text>
+            <rect class="plate" x="690" y="60" width="260" height="100" rx="12" /><text class="pl" x="820" y="126">POSTGRES</text>
+            <rect class="plate" x="-10" y="150" width="260" height="100" rx="12" /><text class="pl" x="120" y="216">MONGODB</text>
+            <rect class="plate" x="610" y="600" width="300" height="100" rx="12" /><text class="pl" x="760" y="666">PARTNER S3</text>
+            <rect class="plate" x="70" y="610" width="300" height="100" rx="12" /><text class="pl" x="220" y="676">LAKE S3</text>
+            <rect class="hub" x="320" y="300" width="260" height="160" rx="20" /><text class="pl light" x="450" y="396" style="font-size: 52px">TRINO</text>
+            <rect id="s06-qin" class="q" x="-150" y="360" width="76" height="40" rx="20" />
+            <rect id="s06-q1" class="q" x="462" y="280" width="76" height="40" rx="20" opacity="0" />
+            <rect id="s06-q2" class="q" x="362" y="280" width="76" height="40" rx="20" opacity="0" />
+            <rect id="s06-q3" class="q" x="542" y="360" width="76" height="40" rx="20" opacity="0" />
+            <rect id="s06-a1" class="a" x="620" y="96" width="40" height="28" rx="14" opacity="0" />
+            <rect id="s06-a2" class="a" x="270" y="186" width="40" height="28" rx="14" opacity="0" />
+            <rect id="s06-a3" class="a" x="740" y="546" width="40" height="28" rx="14" opacity="0" />
+            <rect id="s06-out" class="a" x="300" y="366" width="56" height="28" rx="14" opacity="0" />
+          </g>
+          <g id="s06-legend" opacity="0">
+            <text class="cap strong" x="1456" y="460">taşınan</text><text class="cap" x="1456" y="515">SQL + sonuç satırları</text>
+            <text class="cap strong" x="1456" y="640">yerinde kalan</text><text class="cap" x="1456" y="695">tablolar, dosyalar</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span><span lang="en">Federated query</span></span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 6 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>06 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 07 · Şirket dışı -->
+    <div class="scene" id="s07-outside" data-composition-id="s07-outside" data-start="60" data-duration="10" data-label="Şirket içi ve dışı" data-width="1920" data-height="1080">
+      <section id="s07-outside-body" class="clip" data-start="60" data-duration="10" data-track-index="1">
+        <div class="head"><h2><span lang="en">Federation</span> şirket duvarında bitmek zorunda değil.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <line class="wall" x1="1000" y1="370" x2="1000" y2="960" />
+          <text class="cap" x="975" y="410" text-anchor="end">şirket içi</text><text class="cap" x="1025" y="410">şirket dışı</text>
+          <path class="casing" d="M540 660 H380 V540" /><path class="bore" d="M540 660 H380 V540" />
+          <path class="casing" d="M540 660 H380 V800" /><path class="bore" d="M540 660 H380 V800" />
+          <rect class="plate" x="220" y="440" width="320" height="100" rx="12" /><text class="pl" x="380" y="506">POSTGRES</text>
+          <rect class="plate" x="220" y="800" width="320" height="100" rx="12" /><text class="pl" x="380" y="866">MONGODB</text>
+          <g id="s07-ext" opacity="0">
+            <path class="casing" d="M800 660 H1150 V490 H1300" /><path class="bore" d="M800 660 H1150 V490 H1300" />
+            <path class="casing" d="M800 660 H1300" /><path class="bore" d="M800 660 H1300" />
+            <path class="casing" d="M1150 660 V830 H1300" /><path class="bore" d="M1150 660 V830 H1300" />
+            <rect class="plate" x="1300" y="440" width="500" height="100" rx="12" /><text class="pl" x="1550" y="506">PARTNER S3</text>
+            <rect class="plate" x="1300" y="610" width="500" height="100" rx="12" /><text class="pl" x="1550" y="676">SATIN ALINAN ŞİRKET</text>
+            <rect class="plate" x="1300" y="780" width="500" height="100" rx="12" /><text class="pl" x="1550" y="846">AÇIK VERİ · SAAS</text>
+          </g>
+          <rect id="s07-q" class="q" x="812" y="640" width="76" height="40" rx="20" opacity="0" />
+          <g id="s07-ro" opacity="0">
+            <rect class="hub" x="1580" y="350" width="220" height="64" rx="32" /><text class="pl light" x="1690" y="396" style="font-size: 40px">READ-ONLY</text>
+          </g>
+          <rect class="hub" x="540" y="580" width="260" height="160" rx="20" /><text class="pl light" x="670" y="676" style="font-size: 52px">TRINO</text>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span><span lang="en">Federated query</span></span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 7 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>07 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 08 · Mimari -->
+    <div class="scene" id="s08-architecture" data-composition-id="s08-architecture" data-start="70" data-duration="10" data-label="Trino mimarisi" data-width="1920" data-height="1080">
+      <section id="s08-architecture-body" class="clip" data-start="70" data-duration="10" data-track-index="1">
+        <div class="head"><h2><span lang="en">Trino</span> veri tutmaz: planlar, dağıtır, okur.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <path class="casing" d="M330 560 H560" /><path class="bore" d="M330 560 H560" />
+          <rect class="ghost" x="96" y="500" width="234" height="120" rx="14" /><text class="pl light" x="213" y="576">SQL</text>
+          <rect class="hub" x="560" y="470" width="320" height="180" rx="20" /><text class="pl light" x="720" y="552">COORDINATOR</text>
+          <text class="pl light" x="720" y="606" style="font-size: 40px; font-weight: 600">PARSE · PLAN</text>
+          <rect id="s08-q0" class="q" x="350" y="540" width="76" height="40" rx="20" />
+          <g id="s08-workers" opacity="0">
+            <path class="casing" d="M880 560 H980 V380 H1060 M980 560 H1060 M980 560 V740 H1060" /><path class="bore" d="M880 560 H980 V380 H1060 M980 560 H1060 M980 560 V740 H1060" />
+            <rect class="ghost" x="1060" y="330" width="250" height="100" rx="12" /><text class="pl light" x="1185" y="396">WORKER</text>
+            <rect class="ghost" x="1060" y="510" width="250" height="100" rx="12" /><text class="pl light" x="1185" y="576">WORKER</text>
+            <rect class="ghost" x="1060" y="690" width="250" height="100" rx="12" /><text class="pl light" x="1185" y="756">WORKER</text>
+          </g>
+          <g id="s08-wq" opacity="0">
+            <rect id="s08-w1" class="q" x="890" y="540" width="76" height="40" rx="20" />
+            <rect id="s08-w2" class="q" x="890" y="540" width="76" height="40" rx="20" />
+            <rect id="s08-w3" class="q" x="890" y="540" width="76" height="40" rx="20" />
+          </g>
+          <g id="s08-src" opacity="0">
+            <path class="casing" d="M1310 380 H1510 M1310 560 H1510 M1310 740 H1510" /><path class="bore" d="M1310 380 H1510 M1310 560 H1510 M1310 740 H1510" />
+            <text class="cap" x="1410" y="300" text-anchor="middle">connector</text>
+            <rect class="plate" x="1510" y="330" width="310" height="100" rx="12" /><text class="pl" x="1665" y="396">POSTGRES</text>
+            <rect class="plate" x="1510" y="510" width="310" height="100" rx="12" /><text class="pl" x="1665" y="576">MONGODB</text>
+            <rect class="plate" x="1510" y="690" width="310" height="100" rx="12" /><text class="pl" x="1665" y="756">PARTNER S3</text>
+          </g>
+          <g id="s08-push" opacity="0">
+            <g class="where">
+              <rect class="q" x="1350" y="352" width="140" height="56" rx="28" /><text class="pl" x="1420" y="394" style="font-size: 40px">WHERE</text>
+              <rect class="q" x="1350" y="532" width="140" height="56" rx="28" /><text class="pl" x="1420" y="574" style="font-size: 40px">WHERE</text>
+              <rect class="q" x="1350" y="712" width="140" height="56" rx="28" /><text class="pl" x="1420" y="754" style="font-size: 40px">WHERE</text>
+            </g>
+            <g id="s08-ans" opacity="0"><rect class="a" x="1460" y="366" width="40" height="28" rx="14" /><rect class="a" x="1460" y="546" width="40" height="28" rx="14" /><rect class="a" x="1460" y="726" width="40" height="28" rx="14" /></g>
+            <text class="cap" x="96" y="900"><tspan class="cap strong">pushdown:</tspan> filtre kaynağa iner, sadece eşleşen satırlar döner</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span><span lang="en">Trino</span></span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 8 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i><b>08 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 09 · Spark ve Trino -->
+    <div class="scene" id="s09-spark" data-composition-id="s09-spark" data-start="80" data-duration="10" data-label="Spark ve Trino" data-width="1920" data-height="1080">
+      <section id="s09-spark-body" class="clip" data-start="80" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Spark hesaplar ve yazar; <span lang="en">Trino</span> sorar ve cevap döner.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <line x1="960" y1="350" x2="960" y2="940" stroke="#8c96a3" stroke-width="6" />
+          <text class="pl light" x="480" y="410" style="font-size: 64px">SPARK</text>
+          <path class="casing" d="M210 570 H370 M590 570 H750" /><path class="bore" d="M210 570 H370 M590 570 H750" />
+          <rect class="plate" x="96" y="520" width="114" height="100" rx="12" />
+          <rect class="hub" x="370" y="490" width="220" height="160" rx="20" /><text class="pl light" x="480" y="585">KÜME</text>
+          <rect class="plate" x="750" y="520" width="114" height="100" rx="12" />
+          <g class="amb amb-spark"><rect x="210" y="548" width="80" height="44" rx="6" fill="#8c96a3" /></g>
+          <g class="amb amb-spark" style="animation-delay: 1.2s"><rect x="210" y="548" width="80" height="44" rx="6" fill="#8c96a3" /></g>
+          <g class="cap" text-anchor="middle"><text x="153" y="680">kaynak</text><text x="807" y="680">lake</text></g>
+          <text class="cap strong" x="480" y="800" text-anchor="middle">veriyi yükler, dönüştürür, yazar</text>
+          <text class="cap" x="480" y="860" text-anchor="middle">ETL · ML · streaming</text>
+          <text class="pl light" x="1440" y="410" style="font-size: 64px">TRINO</text>
+          <path class="casing" d="M1170 570 H1330 M1550 570 H1710" /><path class="bore" d="M1170 570 H1330 M1550 570 H1710" />
+          <rect class="ghost" x="1056" y="520" width="114" height="100" rx="12" />
+          <rect class="hub" x="1330" y="490" width="220" height="160" rx="20" /><text class="pl light" x="1440" y="585">TRINO</text>
+          <rect class="plate" x="1710" y="520" width="114" height="100" rx="12" />
+          <g class="amb amb-trino-q"><rect class="q" x="1172" y="550" width="76" height="40" rx="20" /></g>
+          <g class="amb amb-trino-a"><rect class="a" x="1690" y="556" width="40" height="28" rx="14" /></g>
+          <g class="cap" text-anchor="middle"><text x="1113" y="680">SQL</text><text x="1767" y="680">kaynak</text></g>
+          <text class="cap strong" x="1440" y="800" text-anchor="middle">veriyi yerinde okur, sonuç akıtır</text>
+          <text class="cap" x="1440" y="860" text-anchor="middle">interaktif SQL · keşif · BI</text>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span><span lang="en">Trino</span></span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 9 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><b>09 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 10 · Connector'lar -->
+    <div class="scene" id="s10-connectors" data-composition-id="s10-connectors" data-start="90" data-duration="10" data-label="Connector ve catalog" data-width="1920" data-height="1080">
+      <section id="s10-connectors-body" class="clip" data-start="90" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Her kaynak bir connector, her bağlantı bir catalog.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g class="cap"><text x="110" y="370">ilişkisel</text><text x="550" y="370">NoSQL</text><text x="990" y="370">lake</text><text x="1430" y="370">diğer</text></g>
+          <rect class="plate" x="110" y="395" width="380" height="76" rx="12" /><text class="pl" x="300" y="448">POSTGRESQL</text>
+          <rect class="ghost" x="110" y="485" width="380" height="76" rx="12" /><text class="pl light" x="300" y="538">MYSQL</text>
+          <rect class="ghost" x="110" y="575" width="380" height="76" rx="12" /><text class="pl light" x="300" y="628">ORACLE</text>
+          <rect class="ghost" x="110" y="665" width="380" height="76" rx="12" /><text class="pl light" x="300" y="718">SQL SERVER</text>
+          <rect class="plate" x="550" y="395" width="380" height="76" rx="12" /><text class="pl" x="740" y="448">MONGODB</text>
+          <rect class="ghost" x="550" y="485" width="380" height="76" rx="12" /><text class="pl light" x="740" y="538">CASSANDRA</text>
+          <rect class="ghost" x="550" y="575" width="380" height="76" rx="12" /><text class="pl light" x="740" y="628">ELASTICSEARCH</text>
+          <rect class="ghost" x="550" y="665" width="380" height="76" rx="12" /><text class="pl light" x="740" y="718">REDIS</text>
+          <rect class="plate" x="990" y="395" width="380" height="76" rx="12" /><text class="pl" x="1180" y="448">HIVE · S3</text>
+          <rect class="ghost" x="990" y="485" width="380" height="76" rx="12" /><text class="pl light" x="1180" y="538">ICEBERG</text>
+          <rect class="ghost" x="990" y="575" width="380" height="76" rx="12" /><text class="pl light" x="1180" y="628">DELTA LAKE</text>
+          <rect class="ghost" x="990" y="665" width="380" height="76" rx="12" /><text class="pl light" x="1180" y="718">HUDI</text>
+          <rect class="ghost" x="1430" y="395" width="380" height="76" rx="12" /><text class="pl light" x="1620" y="448">KAFKA</text>
+          <rect class="ghost" x="1430" y="485" width="380" height="76" rx="12" /><text class="pl light" x="1620" y="538">CLICKHOUSE</text>
+          <rect class="ghost" x="1430" y="575" width="380" height="76" rx="12" /><text class="pl light" x="1620" y="628">BIGQUERY</text>
+          <rect class="ghost" x="1430" y="665" width="380" height="76" rx="12" /><text class="pl light" x="1620" y="718">GOOGLE SHEETS</text>
+          <g id="s10-name" opacity="0">
+            <rect x="110" y="790" width="1700" height="170" rx="14" fill="#262d36" />
+            <text class="mono" x="960" y="870" text-anchor="middle" style="font-size: 56px"><tspan style="fill: var(--teal); font-weight: 700">postgres</tspan>.public.orders</text>
+            <text class="cap" x="960" y="930" text-anchor="middle">catalog . schema . table</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span><span lang="en">Trino</span></span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 10 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><b>10 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 11 · Sınırlar -->
+    <div class="scene" id="s11-limits" data-composition-id="s11-limits" data-start="100" data-duration="10" data-label="Sınırlar" data-width="1920" data-height="1080">
+      <section id="s11-limits-body" class="clip" data-start="100" data-duration="10" data-track-index="1">
+        <div class="head"><h2><span lang="en">Federation</span> sihir değil: tüp yoksa teslimat da yok.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g id="s11-l1">
+            <path class="casing idle" d="M140 450 H620" />
+            <path class="strike" d="M350 410 L410 490 M410 410 L350 490" />
+            <rect class="plate" x="620" y="400" width="240" height="100" rx="12" /><text class="pl" x="740" y="466">REST API</text>
+            <text class="cap strong" x="140" y="570">hazır connector yok</text><text class="cap" x="140" y="625">önce veriyi indir</text>
+          </g>
+          <g id="s11-l2" opacity="0">
+            <path class="casing" d="M1060 450 H1480" /><path class="bore" d="M1060 450 H1480" />
+            <g id="s11-load"><rect class="q" x="1150" y="430" width="70" height="40" rx="20" /><rect class="q" x="1240" y="430" width="70" height="40" rx="20" /><rect class="q" x="1330" y="430" width="70" height="40" rx="20" /></g>
+            <rect class="plate" x="1480" y="400" width="300" height="100" rx="12" /><text class="pl" x="1630" y="466">CANLI DB</text>
+            <text class="cap strong" x="1060" y="570">kaynak yükü</text><text class="cap" x="1060" y="625">ağır sorgu üretimi yorar</text>
+          </g>
+          <g id="s11-l3" opacity="0">
+            <line class="wall" x1="460" y1="640" x2="460" y2="820" />
+            <text class="cap" x="140" y="700">bulut</text><text class="cap" x="480" y="680">bulut sınırı</text>
+            <path class="casing" d="M140 760 H620" /><path class="bore" d="M140 760 H620" />
+            <rect id="s11-far" class="q" x="150" y="740" width="70" height="40" rx="20" />
+            <rect class="hub" x="300" y="690" width="110" height="56" rx="28" /><text class="mono" x="355" y="730" text-anchor="middle" style="font-size: 30px">$/GB</text>
+            <rect class="plate" x="620" y="710" width="240" height="100" rx="12" /><text class="pl" x="740" y="776">TRINO</text>
+            <text class="cap strong" x="140" y="880">buluttan veri çıkışı (egress)</text><text class="cap" x="140" y="935">dışarı çıkan her GB ücretli</text>
+          </g>
+          <g id="s11-l4" opacity="0">
+            <path class="casing" d="M1060 750 H1480" style="stroke-width: 70" /><path class="bore" d="M1060 750 H1480" style="stroke-width: 50" />
+            <rect id="s11-fat" class="a" x="1130" y="730" width="280" height="40" rx="20" />
+            <rect class="plate" x="1480" y="700" width="300" height="100" rx="12" /><text class="pl" x="1630" y="766">TABLO</text>
+            <text class="cap strong" x="1060" y="880">pushdown yoksa</text><text class="cap" x="1060" y="935">bütün tablo taşınır</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span><span lang="en">Trino</span></span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 11 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><b>11 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 12 · Demo mimarisi -->
+    <div class="scene" id="s12-demo" data-composition-id="s12-demo" data-start="110" data-duration="10" data-label="Demo mimarisi" data-width="1920" data-height="1080">
+      <section id="s12-demo-body" class="clip" data-start="110" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Demoda 6 servis, 4 catalog, tek SQL.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <rect x="70" y="290" width="1780" height="700" rx="28" fill="none" stroke="#8c96a3" stroke-width="6" />
+          <text class="cap" x="110" y="350">docker compose</text>
+          <path class="casing" d="M480 650 H700" /><path class="bore" d="M480 650 H700" />
+          <g class="amb amb-demo"><rect class="q" x="480" y="630" width="76" height="40" rx="20" /></g>
+          <path class="casing" d="M1000 650 H1150 V420 H1300 M1150 570 H1300 M1150 650 V730 H1300" /><path class="bore" d="M1000 650 H1150 V420 H1300 M1150 570 H1300 M1150 650 V730 H1300" />
+          <path class="casing idle" d="M1150 650 V880 H1300" />
+          <rect class="ghost" x="140" y="590" width="340" height="120" rx="14" /><text class="pl light" x="310" y="664">CLOUDBEAVER</text>
+          <text class="mono" x="310" y="770" text-anchor="middle" style="fill: var(--muted)">:8978</text>
+          <rect class="hub" x="700" y="560" width="300" height="180" rx="20" /><text class="pl light" x="850" y="666" style="font-size: 56px">TRINO</text>
+          <text class="mono" x="850" y="800" text-anchor="middle" style="fill: var(--muted)">:8080</text>
+          <rect class="plate" x="1300" y="370" width="480" height="100" rx="12" /><text class="pl" x="1540" y="436">POSTGRES</text>
+          <rect class="plate" x="1300" y="520" width="480" height="100" rx="12" /><text class="pl" x="1540" y="586">MONGODB</text>
+          <rect class="plate" x="1300" y="680" width="480" height="100" rx="12" /><text class="pl" x="1540" y="746">PARTNER S3 · READ-ONLY</text>
+          <rect class="plate" x="1300" y="830" width="480" height="100" rx="12" /><text class="pl" x="1540" y="896">LAKE S3</text>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Demo</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 12 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><b>12 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 13 · Demo yol haritası -->
+    <div class="scene" id="s13-roadmap" data-composition-id="s13-roadmap" data-start="120" data-duration="10" data-label="Demo yol haritası" data-width="1920" data-height="1080">
+      <section id="s13-roadmap-body" class="clip" data-start="120" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Demo 5 istasyonda ilerliyor.</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <path class="casing" d="M220 560 H1700" /><path class="bore" d="M220 560 H1700" />
+          <g class="num" style="font-size: 60px" text-anchor="middle">
+            <circle cx="220" cy="560" r="64" class="hub" /><text x="220" y="582">01</text>
+            <circle cx="590" cy="560" r="64" class="hub" /><text x="590" y="582">02</text>
+            <circle cx="960" cy="560" r="64" class="hub" /><text x="960" y="582">03</text>
+            <circle cx="1330" cy="560" r="64" class="hub" /><text x="1330" y="582">04</text>
+            <circle cx="1700" cy="560" r="64" class="hub" /><text x="1700" y="582">05</text>
+          </g>
+          <g class="amb amb-route"><rect class="q" x="182" y="440" width="76" height="40" rx="20" /></g>
+          <g class="cap strong" text-anchor="middle">
+            <text x="220" y="700">ortam</text><text x="590" y="700">keşif</text><text x="960" y="700">profilleme</text><text x="1330" y="700">federated join</text><text x="1700" y="700">seçici CTAS</text>
+          </g>
+          <g class="mono" text-anchor="middle" style="fill: var(--muted)">
+            <text x="220" y="770">SHOW CATALOGS</text><text x="590" y="770">DESCRIBE</text><text x="960" y="770">403</text><text x="1330" y="770">3 kaynak</text><text x="1700" y="770">lake'e yaz</text>
+          </g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Demo</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 13 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><b>13 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- 14 · Kapanış -->
+    <div class="scene" id="s14-close" data-composition-id="s14-close" data-start="130" data-duration="10" data-label="Teşekkürler" data-width="1920" data-height="1080">
+      <section id="s14-close-body" class="clip" data-start="130" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Teşekkürler. Sorular?</h2></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <path class="casing" d="M480 530 H840 M1300 530 H1360" /><path class="bore" d="M480 530 H840 M1300 530 H1360" />
+          <rect class="hub" x="140" y="330" width="340" height="400" rx="24" />
+          <rect class="light-plate" x="840" y="310" width="460" height="460" rx="20" />
+          <rect class="light-plate" x="1360" y="310" width="460" height="460" rx="20" />
+          <text class="pl" x="1070" y="740" style="font-size: 40px">CEMAL CİCİ · <tspan lang="en">LINKEDIN</tspan></text>
+          <text class="pl" x="1590" y="740" style="font-size: 40px" lang="en">ANKARA DATA COMMUNITY</text>
+          <text class="pl light" x="310" y="800" style="font-size: 52px">CEMAL CİCİ</text>
+          <text class="cap" x="310" y="855" text-anchor="middle" lang="en">cemalcici.com</text>
+          <g class="amb amb-thanks"><rect class="a" x="500" y="516" width="40" height="28" rx="14" /></g>
+          <g class="amb amb-thanks2"><rect class="q" x="1300" y="510" width="60" height="40" rx="20" /></g>        </svg>
+        <img class="avatar" src="assets/img/cc-avatar.jpg" alt="Cemal Cici" />
+        <img class="qr" style="left: 900px" src="assets/img/qr-cemal-linkedin.png" alt="Cemal Cici LinkedIn QR kodu" />
+        <img class="qr" style="left: 1420px" src="assets/img/qr-adc-linkedin.png" alt="Ankara Data Community LinkedIn QR kodu" />
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Kapanış</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 14 / 14"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><b>14 / 14</b></div>
+      </section>
+    </div>
+
+    <!-- Yedek · beklenen sonuçlar -->
+    <div class="scene" id="b1-score" data-composition-id="b1-score" data-start="140" data-duration="10" data-label="Yedek: gecikme ve puan" data-width="1920" data-height="1080">
+      <section id="b1-score-body" class="clip" data-start="140" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Gecikme arttıkça yorum puanı düşüyor.</h2><p class="sub">04_federated.sql · beklenen sonuç · ortalama puan, 5 üzerinden</p></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g class="cap strong"><text x="110" y="500">zamanında</text><text x="110" y="620">1–3 gün geç</text><text x="110" y="740">4–7 gün geç</text><text x="110" y="860">8+ gün geç</text></g>
+          <g class="cap"><text x="110" y="545">89.949 sipariş</text><text x="110" y="665">1.856 sipariş</text><text x="110" y="785">1.755 sipariş</text><text x="110" y="905">2.798 sipariş</text></g>
+          <rect x="520" y="455" width="1030" height="60" rx="8" fill="#3fb6a8" /><rect x="520" y="575" width="790" height="60" rx="8" fill="#8c96a3" />
+          <rect x="520" y="695" width="504" height="60" rx="8" fill="#ff6a13" /><rect x="520" y="815" width="408" height="60" rx="8" fill="#ff6a13" />
+          <g class="num" style="font-size: 48px"><text x="1580" y="502">4,29</text><text x="1340" y="622">3,29</text><text x="1054" y="742">2,10</text><text x="958" y="862">1,70</text></g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Yedek</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 1 / 3"><i class="now"></i><i></i><i></i><b>01 / 3</b></div>
+      </section>
+    </div>
+
+    <div class="scene" id="b2-denied" data-composition-id="b2-denied" data-start="150" data-duration="10" data-label="Yedek: 403" data-width="1920" data-height="1080">
+      <section id="b2-denied-body" class="clip" data-start="150" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Partnerin bucket'ına yazma denemesi reddedildi.</h2><p class="sub">03_profilleme.sql · son komut</p></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <rect x="110" y="420" width="1700" height="480" rx="18" fill="#262d36" />
+          <text class="mono" x="160" y="510">INSERT INTO partner.shipments.events ...</text>
+          <text class="mono alarm" x="160" y="610">Error committing write to Parquet file</text>
+          <text class="mono" x="160" y="700" style="fill: var(--muted)">Caused by: AccessDeniedException:</text>
+          <text class="mono alarm" x="160" y="770">Access Denied (Status Code: 403)</text>
+          <text class="cap" x="160" y="860">Ayrıntıyı görmek için: trino --debug</text>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Yedek</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 2 / 3"><i class="done"></i><i class="now"></i><i></i><b>02 / 3</b></div>
+      </section>
+    </div>
+
+    <div class="scene" id="b3-states" data-composition-id="b3-states" data-start="160" data-duration="10" data-label="Yedek: bölgeler" data-width="1920" data-height="1080">
+      <section id="b3-states-body" class="clip" data-start="160" data-duration="10" data-track-index="1">
+        <div class="head"><h2>Geç teslimin en sık olduğu dört eyalet.</h2><p class="sub">04_federated.sql · ikinci sorgu, geç teslim oranı</p></div>
+        <svg class="viz" viewBox="0 0 1920 1080">
+          <g class="pl light" style="text-anchor: start; font-size: 52px"><text x="110" y="500">MA</text><text x="110" y="610">CE</text><text x="110" y="720">BA</text><text x="110" y="830">RJ</text></g>
+          <g fill="#ff6a13">
+            <rect x="260" y="458" width="1218" height="56" rx="8" /><rect x="260" y="568" width="966" height="56" rx="8" />
+            <rect x="260" y="678" width="854" height="56" rx="8" /><rect x="260" y="788" width="847" height="56" rx="8" />
+          </g>
+          <g class="num" style="font-size: 48px"><text x="1510" y="502">%17,4</text><text x="1258" y="612">%13,8</text><text x="1146" y="722">%12,2</text><text x="1139" y="832">%12,1</text></g>
+        </svg>
+        <div class="foot"><span lang="en">cemalcici.com</span><span>Yedek</span><span lang="en">VBO Data Engineering Bootcamp</span></div>
+        <div class="rail" aria-label="Adım 3 / 3"><i class="done"></i><i class="done"></i><i class="now"></i><b>03 / 3</b></div>
+      </section>
+    </div>
+
+    </div>
+
+    <script>
+      // One root timeline drives the whole deck (standalone/presenter mode). Every
+      // fragment state is correct at its hold time; motion ends exactly there.
+      const root = gsap.timeline({ paused: true });
+      const ease = "power2.inOut";
+      // Move a capsule through relative waypoints [[dx, dy], ...], arriving at `at`.
+      function travel(el, points, at, dur = 1.2) {
+        const seg = dur / points.length;
+        points.forEach(([x, y], i) => root.to(el, { x, y, duration: seg, ease: i === points.length - 1 ? "power3.out" : "none" }, at - dur + i * seg));
+      }
+      const show = (el, at, dur = 0.4) => root.to(el, { opacity: 1, duration: dur }, at - dur);
+      const hide = (el, at, dur = 0.2) => root.to(el, { opacity: 0, duration: dur }, at - dur);
+
+      // 01 · capsules leave and return
+      root.fromTo("#s01-q", { y: 110 }, { y: 0, duration: 1.2, ease }, 1);
+      root.fromTo("#s01-a", { x: 140 }, { x: 0, duration: 1.2, ease }, 2);
+
+      // 03 · the question splits and each part drops into its source
+      show("#s03-tubes", 27, 0.3);
+      hide("#s03-whole", 25.6);
+      show("#s03-parts", 25.6, 0.1);
+      root.fromTo("#s03-p1", { x: 220 }, { x: 0, duration: 0.6, ease }, 25.5);
+      root.fromTo("#s03-p3", { x: -220 }, { x: 0, duration: 0.6, ease }, 25.5);
+      root.to("#s03-parts", { y: 110, duration: 0.8, ease: "power3.out" }, 26.2);
+
+      // 04 · everything is hauled into the lake, the question waits at the end
+      travel("#s04-c1", [[515, 0], [515, 70], [780, 70]], 31, 0.8);
+      travel("#s04-c2", [[780, 0]], 31, 0.8);
+      travel("#s04-c3", [[515, 0], [515, -70], [780, -70]], 31, 0.8);
+      ["#s04-c1", "#s04-c2", "#s04-c3"].forEach((c) => hide(c, 31, 0.1));
+      show("#s04-steps", 35.6);
+      travel("#s04-ask", [[1474, 0]], 37, 1.3);
+
+      // 05 · only the needed slice leaves the partner's payload
+      root.fromTo("#s05-need", { y: -250 }, { y: 0, duration: 0.8, ease: "power3.out" }, 40.2);
+      show("#s05-facts", 47);
+      root.fromTo("#s05-facts", { x: -40 }, { x: 0, duration: 0.4, ease: "power3.out" }, 46.6);
+
+      // 06 · in, split, out to stations, answers back, one result out
+      travel("#s06-qin", [[394, 0]], 51, 0.8);
+      hide("#s06-qin", 52.4);
+      ["#s06-q1", "#s06-q2", "#s06-q3"].forEach((q) => show(q, 52.4, 0.1));
+      travel("#s06-q1", [[0, -190], [150, -190]], 55, 1.4);
+      travel("#s06-q2", [[0, -100], [-110, -100]], 55, 1.4);
+      travel("#s06-q3", [[180, 0], [180, 180]], 55, 1.4);
+      ["#s06-q1", "#s06-q2", "#s06-q3"].forEach((q) => hide(q, 55.4));
+      ["#s06-a1", "#s06-a2", "#s06-a3"].forEach((a) => show(a, 55.6, 0.1));
+      travel("#s06-a1", [[-140, 0], [-140, 190]], 57.4, 1.4);
+      travel("#s06-a2", [[110, 0], [110, 100]], 57.4, 1.4);
+      travel("#s06-a3", [[0, -180], [-180, -180]], 57.4, 1.4);
+      ["#s06-a1", "#s06-a2", "#s06-a3"].forEach((a) => hide(a, 57.6));
+      show("#s06-out", 57.8, 0.1);
+      travel("#s06-out", [[-430, 0]], 59, 1);
+      show("#s06-legend", 59);
+
+      // 07 · reach outside the wall; the partner only lets us read
+      show("#s07-ext", 61, 0.6);
+      show("#s07-q", 65.1, 0.1);
+      travel("#s07-q", [[300, 0], [300, -170], [410, -170]], 66.6, 1.4);
+      show("#s07-ro", 67);
+
+      // 08 · SQL to coordinator, plan fans out to workers, WHERE rides the connector
+      travel("#s08-q0", [[150, 0]], 71, 0.8);
+      hide("#s08-q0", 73.5);
+      show("#s08-workers", 73.4);
+      show("#s08-wq", 73.5, 0.1);
+      travel("#s08-w1", [[52, 0], [52, -180], [132, -180]], 75, 1.4);
+      travel("#s08-w2", [[132, 0]], 75, 1.4);
+      travel("#s08-w3", [[52, 0], [52, 180], [132, 180]], 75, 1.4);
+      hide("#s08-wq", 75.6);
+      show("#s08-src", 76.4);
+      show("#s08-push", 77.4, 0.2);
+      root.fromTo("#s08-push .where", { x: -110 }, { x: 0, duration: 0.8, ease: "power3.out" }, 77.4);
+      show("#s08-ans", 78.3, 0.1);
+      root.fromTo("#s08-ans", { x: 0 }, { x: -150, duration: 0.7, ease: "power3.out" }, 78.3);
+
+      // 10 · the three-part name slides in
+      show("#s10-name", 97);
+      root.fromTo("#s10-name", { y: 40 }, { y: 0, duration: 0.4, ease: "power3.out" }, 96.6);
+
+      // 11 · limits, each one a tube in trouble
+      show("#s11-l2", 102.4);
+      root.fromTo("#s11-load", { x: -100 }, { x: 0, duration: 1.4, ease: "power3.out" }, 102.6);
+      show("#s11-l3", 105);
+      travel("#s11-far", [[400, 0]], 107, 1.6);
+      show("#s11-l4", 108);
+      root.fromTo("#s11-fat", { x: 230 }, { x: 0, duration: 1, ease: "power2.out" }, 108);
+
+
+      const TOTAL = 170;
+      root.to({}, { duration: TOTAL }, 0);
+      const SCENES = [...document.querySelectorAll(".scene")].map((el) => ({
+        el, id: el.dataset.compositionId, start: +el.dataset.start, duration: +el.dataset.duration,
+      }));
+      // Only the active scene is shown; inactive frames must not catch clicks.
+      function updateVisibility(t) {
+        for (const s of SCENES) {
+          const on = t >= s.start && t < s.start + s.duration;
+          s.el.style.opacity = on ? "1" : "0";
+          s.el.style.visibility = on ? "visible" : "hidden";
+          s.el.style.pointerEvents = on ? "auto" : "none";
+        }
+      }
+      root.eventCallback("onUpdate", () => updateVisibility(root.time()));
+      updateVisibility(0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["root"] = root;
+      // Presenter navigation (only inside <hyperframes-slideshow>): Back steps one
+      // fragment at a time, and forward steps play their motion instead of jumping.
+      (function patchNavigation() {
+        let host = null;
+        try { host = parent !== window && parent.document.querySelector("hyperframes-slideshow"); } catch (e) { return; }
+        if (!host) return;
+        const patched = new WeakSet();
+        const sceneStart = (t) => (SCENES.find((s) => t >= s.start && t < s.start + s.duration) || { start: 0 }).start;
+        function patch() {
+          const c = host.controller, player = host.querySelector("hyperframes-player");
+          if (!c || !player || patched.has(c)) return;
+          patched.add(c);
+          let run = null, last = 0;
+          c.playTo = (target) => {
+            if (run) run.kill();
+            const now = Number.isFinite(player.currentTime) ? player.currentTime : last;
+            last = target;
+            const from = Math.max(now, sceneStart(target), target - 3.6);
+            if (!(target > from) || target - now > 12) { player.seek(target); return; }
+            const head = { t: from };
+            run = gsap.to(head, { t: target, duration: Math.min(2.2, (target - from) / 1.5), ease: "none", onUpdate: () => player.seek(head.t) });
+          };
+          c.prev = function () {
+            const f = this.frame;
+            if (f.fragmentIndex > 0) { this.resumeSlide(f.slideIndex, f.fragmentIndex - 1); return; }
+            if (f.slideIndex > 0) {
+              const p = this.slidesOf(f.sequenceId)[f.slideIndex - 1];
+              this.stopSlideMedia();
+              this.resumeSlide(f.slideIndex - 1, p.fragments.length - 1);
+              return;
+            }
+            if (this.stack.length > 1) this.back();
+          };
+        }
+        patch();
+        setInterval(patch, 500);
+      })();
+      // Tell <hyperframes-slideshow> where every scene sits on the timeline.
+      function postTimeline() {
+        parent.postMessage({ source: "hf-preview", type: "timeline", durationInFrames: TOTAL * 30,
+          scenes: SCENES.map(({ id, start, duration }) => ({ id, start, duration })) }, "*");
+      }
+      if (document.readyState === "complete") setTimeout(postTimeline, 300);
+      else window.addEventListener("load", () => setTimeout(postTimeline, 300));
+    </script>
+  </body>
+</html>
