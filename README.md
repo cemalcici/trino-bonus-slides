@@ -2,6 +2,8 @@
 
 VBO Data Engineering Bootcamp bonus dersinin sunumu: federated query mantığı ve Trino.
 
+**Güncel sürüm:** https://talks.cemalcici.com/vbo-debc-trino-federated-query/ (notlu okuma: [/oku/](https://talks.cemalcici.com/vbo-debc-trino-federated-query/oku/)). Bu repo sunumun ilk HyperFrames sürümünün arşividir.
+
 **Sunumu aç:** https://cemalcici.github.io/trino-bonus-slides/
 
 **Demo reposu:** [cemalcici/trino-federated-demo](https://github.com/cemalcici/trino-federated-demo). Sunumdaki sayılar bu demodaki ölçümlerden alındı.
